@@ -69,14 +69,13 @@ occup_names <- function(x) {
 # Read in data and merge occupation data -----
 
 # Read in data
-c12 <- read_dta("CCES Data/CCES12_Common_VV.dta")
-c12 <- read_dta("")
-c14 <- read_dta("CCES Data/CCES14_Common_Content_Validated.dta")
-c16 <- read_dta("CCES Data/CCES16_Common_OUTPUT_vv_CLconfid_v2018.dta")
+c12 <- read_dta("Data/CCES12_Common_VV.dta")
+c14 <- read_dta("Data/CCES14_Common_Content_Validated.dta")
+c16 <- read_dta("Data/CCES16_Common_OUTPUT_vv_CLconfid_v2018.dta")
 
 # Read in coded occupation data
-occ14 <- readr::read_csv("cces_occ_2014.csv")
-occ16 <- readr::read_csv("cces_occ_2016.csv")
+occ14 <- readr::read_csv("Data/cces_occ_2014.csv")
+occ16 <- readr::read_csv("Data/cces_occ_2016.csv")
 
 # Merge occupation data to 2014 and 2016 by caseid
 c14 <- left_join(c14, occ14, by = c("V101" = "caseid"))
@@ -130,7 +129,9 @@ cc12 <- c12 %>%
                 black, latino, asian, union_self, pid7, ownhome, yrs_res, child, wt,
                 occ, occ_n, starts_with("p_"))
 
+
 # Prepare Data: 2014 ------
+
 
 cc14 <- c14 %>%
   mutate(
@@ -187,7 +188,6 @@ cc16 <- c16 %>%
     vv_gen = ifelse(CL_E2016GVM %in% c("absentee", "earlyVote", "mail", "polling", "unknown"), 1, 0),
     ownhome = as.numeric(ownhome == 1),
     child = as.numeric(child18 == 1),
-    emp_status = emp_st(employ),
     yrs_res = ifelse(citylength_1 < 1, 0,
                      ifelse(citylength_1 > 1 & citylength_1 < 5, 1,
                             ifelse(citylength_1 >= 5, 2, citylength_1))),
