@@ -5,6 +5,7 @@ library(dplyr)
 library(tidyr)
 library(haven)
 library(ggplot2)
+library(ggeffects)
 
 # Functions ------
 
@@ -64,7 +65,7 @@ occup_names <- function(x) {
                                                                                                     ifelse(x == 14, "Professional", x)))))))))))))))
   
   
-}
+} 
 
 # Read in data and merge occupation data -----
 
