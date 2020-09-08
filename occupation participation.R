@@ -233,7 +233,119 @@ cc16 <- c16 %>%
 call <- bind_rows(list(cc12, cc14, cc16))
 
 
-# Analysis: participation by occupation -----
+# Analysis: participation by  ------
+
+
+part_models <- function(y) {
+  glm(y ~ occ_n + union_self + ba + income3 + age + female + black + latino + asian +
+        ideology + pid7 + married + ownhome + yrs_res + child + unemp + factor(year),
+      family =  binomial("logit"),
+      weights = wt, data = call)
+}
+
+m1 <- part_models(call$p_run_off)
+m2 <- part_models(call$p_sign)
+m3 <- part_models(call$p_camp)
+m4 <- part_models(call$p_donate)
+m5 <- part_models(call$p_att_mtg)
+
+mods <- list(run = m1, 
+             sign = m2, 
+             camp = m3, 
+             donate = m4, 
+             att = m5)
+
+outs <- purrr::map_df(mods, 
+                      ~ggpredict(.x, terms = "occ_n"),
+                      .id = "model")
+
+m1 <- glm(p_run_off ~ occ_n + union_self + ba + income3 + age + female + black + latino + asian +
+           ideology + pid7 + married + ownhome + yrs_res + child + unemp + factor(year),
+         family =  binomial("logit"),
+         weights = wt, data = call)
+m2 <- glm(p_sign ~ occ_n + union_self + ba + income3 + age + female + black + latino + asian +
+            ideology + pid7 + married + ownhome + yrs_res + child + unemp + factor(year),
+          family =  binomial("logit"),
+          weights = wt, data = call)
+m3 <- glm(p_camp ~ occ_n + union_self + ba + income3 + age + female + black + latino + asian +
+            ideology + pid7 + married + ownhome + yrs_res + child + unemp + factor(year),
+          family =  binomial("logit"),
+          weights = wt, data = call)
+m4 <- glm(p_donate ~ occ_n + union_self + ba + income3 + age + female + black + latino + asian +
+            ideology + pid7 + married + ownhome + yrs_res + child + unemp + factor(year),
+          family =  binomial("logit"),
+          weights = wt, data = call)
+m5 <- glm(p_att_mtg ~ occ_n + union_self + ba + income3 + age + female + black + latino + asian +
+            ideology + pid7 + married + ownhome + yrs_res + child + unemp + factor(year),
+          family = binomial("logit"),
+          weights = wt, data = call)
+
+mods <- data.frame(models = list(run = m1, 
+                                 sign = m2, 
+                                 camp = m3, 
+                                 donate = m4, 
+                                 att = m5))
+
+outs <- purrr::map_df(mods, 
+                      ~ggpredict(.x, terms = "occ_n"),
+                      .id = "model")
+
+get_pps <- function(list_mods) {
+  require(ggeffects)
+  outs <- purrr::map(list_mods, ~(ggpredict, terms = "occ_f"))
+}
+
+outs <- purrr::map_df(mods, 
+                      ~ggpredict(.x, terms = "occ_n"),
+                      .id = "model")
+
+outs <- get_pps(mods)
+
+get_pps <- function(list_mods) {
+  require(ggeffects)
+  for(i in out)
+  out1 <- ggpredict(m1, "occ_n")
+  out2 <- ggpredict(m2, "occ_n")
+  out3 <- ggpredict(m3, "occ_n")
+  out4 <- ggpredict(m4, "occ_n")
+  out5 <- ggpredict(m5, "occ_n")
+  pp_dfs <- bind_rows(list(run = out1,
+                           sign = out2,
+                           camp = out3,
+                           donate = out4,
+                           att = out5), .id = "model")
+  pp_dfs
+}
+
+x <- c(1, 2, 4, 4)
+n <- length(x)
+
+
+p <- get_pps(mods)
+
+ggplot(p, aes(x = reorder(x, predicted), y = predicted)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = conf.high, ymin = conf.low), width = 0.1) +
+  theme_bw() +
+  facet_wrap(~model)
+
+
+gsub("()", "", m1$call[[2]][2])
+
+
+for(i in mods) {
+  out <- data.frame()
+  pp[out] <- ggeffects::ggpredict(i, "occ_n")
+}
+
+pp_df <- list()
+
+for(mod in mods[mod]) {
+  require(ggeffects)
+  pp_df[mod] <- ggpredict(mod, "occ_n")
+}
+
+# Analysis: participation (scale) by occupation -----
 
 # Means
 m <- means_and_bars_wt(call, occ_n, p_scale, wt)
@@ -246,9 +358,36 @@ ggplot(m, aes(x = reorder(occ_n, avg), y = avg)) +
   labs(title = "Means")
 
 # Model, predicted values
-m2 <- lm(p_scale ~ occ_n + union_self + ba + income3 + age + female + black + latino + asian +
+m2 <- lm(p_scale ~ union_self + ba + income3 + age + female + black + latino + asian +
            ideology + pid7 + married + ownhome + yrs_res + child + unemp + factor(year),
          weights = wt, data = call)
+
+m2 <- lm(p_scale ~ occ_n + unemp,
+         weights = wt, data = call)
+
+# p ~ occ, n = 89,406; adding unemp doesn't change the n
+# 2012: ask if employ 1, 2, or 5 or hadjob 1
+
+emp <- c12[1:300, c("employ", "hadjob", "occupationcat")]
+e <- c12 %>%
+  filter(employ == 4 & hadjob == 2)
+e <- e[1:500, c("employ", "hadjob", "occupationcat")]
+unem <- c12 %>%
+  filter(employ == 4) %>%
+  select(hadjob, V103)
+weights::wpct(unem$hadjob, weight = unem$V103)
+table(unem$hadjob)
+
+texreg::screenreg(m2)
+
+addmargins(table(call$occ_n))
+summary(call$occ)
+
+# occ: 70,982 NAs
+142283-87092
+
+# 87,092
+# 142,283 w/0 occ_F
 
 preds <- ggpredict(m2, c("occ_n"))
 
